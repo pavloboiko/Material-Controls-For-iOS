@@ -32,6 +32,7 @@
 @implementation MDTableViewCell
 
 - (void)awakeFromNib {
+  [super awakeFromNib];
   // Initialization code
   [self initLayer];
 }
@@ -66,7 +67,6 @@
 }
 
 - (void)initLayer {
-  self.selectionStyle = UITableViewCellSelectionStyleNone;
   if (!_rippleColor)
     _rippleColor = [UIColor colorWithWhite:0.5 alpha:1];
 
@@ -94,7 +94,7 @@
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
   [super touchesCancelled:touches withEvent:event];
-  [_mdLayer stopEffects];
+  [_mdLayer stopEffectsImmediately];
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {

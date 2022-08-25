@@ -192,6 +192,54 @@
   return nil;
 }
 
+#pragma mark Setters
+- (void)setSelectedIndex:(NSUInteger)selectedIndex {
+  _tabBar.selectedIndex = selectedIndex;
+  [self moveToPage:selectedIndex];
+}
+
+#pragma mark Getter
+- (NSUInteger)selectedIndex {
+  return _tabBar.selectedIndex;
+}
+
+- (void)moveToPage:(NSUInteger)selectedIndex {
+  UIViewController *viewController =
+      [viewControllers objectForKey:[NSNumber numberWithInteger:selectedIndex]];
+
+  if (!viewController) {
+    viewController = [self.delegate tabBarViewController:self
+                                   viewControllerAtIndex:selectedIndex];
+    [viewControllers setObject:viewController
+                        forKey:[NSNumber numberWithInteger:selectedIndex]];
+  }
+
+  UIPageViewControllerNavigationDirection animateDirection =
+      selectedIndex > lastIndex
+          ? UIPageViewControllerNavigationDirectionForward
+          : UIPageViewControllerNavigationDirectionReverse;
+
+  __unsafe_unretained typeof(self) weakSelf = self;
+  disableDragging = YES;
+  pageController.view.userInteractionEnabled = NO;
+  [pageController
+      setViewControllers:@[ viewController ]
+               direction:animateDirection
+                animated:YES
+              completion:^(BOOL finished) {
+                weakSelf->disableDragging = NO;
+                weakSelf->pageController.view.userInteractionEnabled = YES;
+                weakSelf->lastIndex = selectedIndex;
+
+                if ([weakSelf->_delegate
+                        respondsToSelector:@selector(tabBarViewController:
+                                                           didMoveToIndex:)]) {
+                  [weakSelf->_delegate tabBarViewController:weakSelf
+                                             didMoveToIndex:selectedIndex];
+                }
+              }];
+}
+
 #pragma mark - PageViewController Delegate
 - (void)pageViewController:(UIPageViewController *)pageViewController
         didFinishAnimating:(BOOL)finished
@@ -217,40 +265,7 @@
 #pragma mark - MDTabBar Delegate
 - (void)tabBar:(MDTabBar *)tabBar
     didChangeSelectedIndex:(NSUInteger)selectedIndex {
-  UIViewController *viewController =
-      [viewControllers objectForKey:[NSNumber numberWithInteger:selectedIndex]];
-
-  if (!viewController) {
-    viewController = [self.delegate tabBarViewController:self
-                                   viewControllerAtIndex:selectedIndex];
-    [viewControllers setObject:viewController
-                        forKey:[NSNumber numberWithInteger:selectedIndex]];
-  }
-
-  UIPageViewControllerNavigationDirection animateDirection =
-      selectedIndex > lastIndex
-          ? UIPageViewControllerNavigationDirectionForward
-          : UIPageViewControllerNavigationDirectionReverse;
-
-  __unsafe_unretained typeof(self) weakSelf = self;
-  disableDragging = YES;
-  pageController.view.userInteractionEnabled = NO;
-  [pageController
-      setViewControllers:@[ viewController ]
-               direction:animateDirection
-                animated:NO
-              completion:^(BOOL finished) {
-                weakSelf->disableDragging = NO;
-                weakSelf->pageController.view.userInteractionEnabled = YES;
-                weakSelf->lastIndex = selectedIndex;
-
-                if ([weakSelf->_delegate
-                        respondsToSelector:@selector(tabBarViewController:
-                                                           didMoveToIndex:)]) {
-                  [weakSelf->_delegate tabBarViewController:weakSelf
-                                             didMoveToIndex:selectedIndex];
-                }
-              }];
+  [self moveToPage:selectedIndex];
 }
 
 #pragma mark - ScrollView Delegate

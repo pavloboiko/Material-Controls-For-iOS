@@ -23,11 +23,15 @@
 #import <UIKit/UIKit.h>
 #import "MDTabBar.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @class MDTabBarViewController;
+
 @protocol MDTabBarViewControllerDelegate <NSObject>
+
 - (UIViewController *)tabBarViewController:
                           (MDTabBarViewController *)viewController
                      viewControllerAtIndex:(NSUInteger)index;
+
 @optional
 - (void)tabBarViewController:(MDTabBarViewController *)viewController
               didMoveToIndex:(NSUInteger)index;
@@ -37,8 +41,10 @@
 
 @property(nonatomic, readonly) MDTabBar *tabBar;
 @property(nonatomic, weak) id<MDTabBarViewControllerDelegate> delegate;
+@property(nonatomic) NSUInteger selectedIndex;
 
-- (instancetype)initWithDelegate:(id)delegate;
-- (void)setItems:(NSArray *)items;
+- (instancetype)initWithDelegate:(id<MDTabBarViewControllerDelegate>)delegate;
+- (void)setItems:(NSArray<id> *)items;
 
 @end
+NS_ASSUME_NONNULL_END

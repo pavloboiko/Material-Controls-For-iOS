@@ -31,9 +31,6 @@
 
 @implementation MDCalendarYearSelectorViewCell
 
-- (void)awakeFromNib {
-}
-
 - (instancetype)initWithStyle:(UITableViewCellStyle)style
               reuseIdentifier:(NSString *)reuseIdentifier {
   if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
@@ -72,7 +69,10 @@
     _backgroundCurentYearLayer.hidden = NO;
     [self.textLabel setTextColor:_titleColors[@(MDCalendarCellStateSelected)]];
   } else {
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
     _backgroundCurentYearLayer.hidden = YES;
+    [CATransaction commit];
     [self.textLabel setTextColor:_titleColors[@(MDCalendarCellStateNormal)]];
   }
 }

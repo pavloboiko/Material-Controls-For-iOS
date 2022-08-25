@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#import "MDSlider.h"
 #import "MDSliderThumbView.h"
 #import "UIViewHelper.h"
-#import "MDSlider.h"
 
 #define kMDThumbBorderWidth 2
 
@@ -30,6 +30,10 @@
 #define kMDShowThumbAnimationKey @"showThumb"
 #define kMDHideBubbleAnimationKey @"hideBubble"
 #define kMDShowBubbleAnimationKey @"showBubble"
+
+@interface MDSliderThumbView () <CAAnimationDelegate>
+
+@end
 
 @implementation MDSliderThumbView {
   NSLayoutConstraint *nodeWidthConstraint;
@@ -45,7 +49,7 @@
     _node.layer.cornerRadius = kMDThumbRadius;
     [self addSubview:_node];
     [self setupConstraints];
-    _state = Normal;
+    _state = MDSliderThumbStateNormal;
   }
   return self;
 }
@@ -105,7 +109,7 @@
 }
 
 - (void)focused:(void (^)(BOOL finished))completion {
-  _state = Focused;
+  _state = MDSliderThumbStateFocused;
   [UIView animateWithDuration:kMDAnimationDuration
                    animations:^{
                      nodeWidthConstraint.constant = kMDThumbForcusedRadius * 2;
@@ -123,14 +127,14 @@
   _node.layer.cornerRadius = kMDThumbForcusedRadius;
   [_node.layer addAnimation:animation forKey:@"cornerRadius"];
 
-  if (_slider.step > 0 && _slider.enabledValueLabel) {
+  if (_enableBubble) {
     [self showBubble];
     [self hideNode];
   }
 }
 
 - (void)lostFocused:(void (^)(BOOL finished))completion {
-  _state = Normal;
+  _state = MDSliderThumbStateNormal;
   [UIView animateWithDuration:kMDAnimationDuration
                    animations:^{
                      nodeWidthConstraint.constant = kMDThumbRadius * 2;
@@ -148,14 +152,34 @@
   _node.layer.cornerRadius = kMDThumbRadius;
   [_node.layer addAnimation:animation forKey:@"cornerRadius"];
 
-  if (_slider.step > 0 && _slider.enabledValueLabel) {
+  if (_enableBubble) {
     [self hideBubble];
     [self showNode];
   }
 }
 
+- (void)enabled:(void (^)(BOOL finished))completion {
+  _state = MDSliderThumbStateNormal;
+  [UIView animateWithDuration:kMDAnimationDuration
+                   animations:^{
+                     nodeWidthConstraint.constant = kMDThumbRadius * 2;
+                     [self layoutIfNeeded];
+                   }
+                   completion:completion];
+
+  CABasicAnimation *animation =
+      [CABasicAnimation animationWithKeyPath:@"cornerRadius"];
+  animation.timingFunction =
+      [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionLinear];
+  animation.fromValue = [NSNumber numberWithFloat:_node.layer.cornerRadius];
+  animation.toValue = [NSNumber numberWithInt:kMDThumbRadius];
+  animation.duration = kMDAnimationDuration;
+  _node.layer.cornerRadius = kMDThumbRadius;
+  [_node.layer addAnimation:animation forKey:@"cornerRadius"];
+}
+
 - (void)disabled:(void (^)(BOOL finished))completion {
-  _state = Disabled;
+  _state = MDSliderThumbStateDisabled;
   [UIView animateWithDuration:kMDAnimationDuration
                    animations:^{
                      nodeWidthConstraint.constant = kMDThumbDisabledRadius * 2;
@@ -174,7 +198,7 @@
   [_node.layer addAnimation:animation forKey:@"cornerRadius"];
 }
 
-- (void)changeThumbShape:(BOOL)animated withValue:(float)rawValue {
+- (void)changeThumbShape:(BOOL)animated withValue:(CGFloat)rawValue {
   CAAnimationGroup *changeShape;
   if (animated) {
     changeShape = [CAAnimationGroup animation];
@@ -251,7 +275,8 @@
   }
 }
 
-- (void)enableBubble:(BOOL)enabled {
+- (void)setEnableBubble:(BOOL)enabled {
+  _enableBubble = enabled;
   if (enabled) {
     if (!_bubble.superview) {
       [self addSubview:_bubble];
